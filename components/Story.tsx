@@ -1,5 +1,4 @@
-"use client";
-
+// Asegúrate de que todos los componentes se importen correctamente
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -20,12 +19,9 @@ import {
 } from "@/components/ui/table";
 import { Textarea } from "@/components/ui/textarea";
 import { useChat } from "ai/react"; // Reemplaza con la librería correcta o el path adecuado
-// Add this import at the top of the file
-import { Edit as FilePenIcon, Trash as TrashIcon } from "lucide-react"; // Updated icon name
+import { Edit as FilePenIcon, Trash as TrashIcon } from "lucide-react";
 import { useState } from "react";
 
-// Add this type definition at the top of the file, after the imports
-// ... existing imports ...
 type Character = {
   id: number;
   name: string;
@@ -35,20 +31,18 @@ type Character = {
 
 interface StoryProps {
   characters: Character[];
+  onUpdateCharacters: (characters: Character[]) => void; // Add this line
 }
 
-export default function Story({ characters }: StoryProps) {
+export default function Story({ characters, onUpdateCharacters }: StoryProps) {
+  // Destructure onUpdateCharacters
   const [showDialog, setShowDialog] = useState(false);
   const [selectedCharacter, setSelectedCharacter] = useState<Character | null>(
     null,
   );
-
-  // Remove the duplicate declaration of characters
-  // const [characters, setCharacters] = useState<Character[]>(characters);
   const [localCharacters, setLocalCharacters] =
     useState<Character[]>(characters);
 
-  // Use useChat hook
   const { messages, append, isLoading, setMessages } = useChat();
 
   const handleAddCharacter = () => {
@@ -67,38 +61,41 @@ export default function Story({ characters }: StoryProps) {
 
   const handleSaveCharacter = (character: Character) => {
     if (selectedCharacter) {
-      setLocalCharacters(
-        localCharacters.map((char) =>
+      setLocalCharacters((prevCharacters) => {
+        const updatedCharacters = prevCharacters.map((char) =>
           char.id === character.id ? character : char,
-        ),
-      );
+        );
+        onUpdateCharacters(updatedCharacters); // Actualiza en el componente padre
+        return updatedCharacters;
+      });
     } else {
-      setLocalCharacters([
-        ...localCharacters,
-        { ...character, id: localCharacters.length + 1 },
-      ]);
+      setLocalCharacters((prevCharacters) => {
+        const newCharacters = [
+          ...prevCharacters,
+          { ...character, id: prevCharacters.length + 1 },
+        ];
+        onUpdateCharacters(newCharacters); // Actualiza en el componente padre
+        return newCharacters;
+      });
     }
     setShowDialog(false);
+    setSelectedCharacter(null); // Limpia el personaje seleccionado después de guardar
   };
 
   const handleGenerateStory = () => {
-    // Limpiar mensajes anteriores antes de generar una nueva historia
     setMessages([]);
-
-    // Llamada a append para generar la historia con personajes actualizados
-    append({ role: "user", content: JSON.stringify({ characters }) }, '/app/api/chat');
+    append({ role: "user", content: JSON.stringify({ characters }) });
   };
 
   const filterMessageContent = (content: string) => {
     try {
       const parsedContent = JSON.parse(content);
       if (parsedContent.characters) {
-        // Elimina la parte que no deseas mostrar
         return "";
       }
-      return content; // Si no es el JSON con personajes, muestra el contenido
+      return content;
     } catch (error) {
-      return content; // Si no es un JSON válido, muestra el contenido original
+      return content;
     }
   };
 
@@ -147,35 +144,50 @@ export default function Story({ characters }: StoryProps) {
       </Table>
       {showDialog && (
         <Dialog open={showDialog} onOpenChange={setShowDialog}>
-          <DialogContent className="p-6" style={{ background: "white" }}>
+          <DialogContent
+            className="rounded-md bg-gray-900 p-6 text-white shadow-lg"
+            style={{ border: "1px solid #1f2937", borderRadius: "0.375rem" }}
+          >
             <DialogHeader>
-              <DialogTitle>
+              <DialogTitle className="text-lg font-semibold text-gray-200">
                 {selectedCharacter ? "Edit Character" : "Add Character"}
               </DialogTitle>
             </DialogHeader>
             <div className="grid gap-4">
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <Label htmlFor="name">Name</Label>
+                  <Label htmlFor="name" className="text-sm text-gray-400">
+                    Name
+                  </Label>
                   <Input
                     id="name"
+                    className="bg-gray-800 text-white placeholder-gray-500"
                     defaultValue={selectedCharacter?.name}
                     placeholder="Enter character name"
                   />
                 </div>
                 <div>
-                  <Label htmlFor="personality">Personality</Label>
+                  <Label
+                    htmlFor="personality"
+                    className="text-sm text-gray-400"
+                  >
+                    Personality
+                  </Label>
                   <Input
                     id="personality"
+                    className="bg-gray-800 text-white placeholder-gray-500"
                     defaultValue={selectedCharacter?.personality}
                     placeholder="Enter character personality"
                   />
                 </div>
               </div>
               <div>
-                <Label htmlFor="description">Description</Label>
+                <Label htmlFor="description" className="text-sm text-gray-400">
+                  Description
+                </Label>
                 <Textarea
                   id="description"
+                  className="bg-gray-800 text-white placeholder-gray-500"
                   defaultValue={selectedCharacter?.description}
                   placeholder="Enter character description"
                   rows={3}
@@ -185,6 +197,7 @@ export default function Story({ characters }: StoryProps) {
             <DialogFooter>
               <Button
                 type="submit"
+                className="bg-blue-600 text-white hover:bg-blue-700"
                 onClick={() =>
                   handleSaveCharacter({
                     id: selectedCharacter?.id ?? localCharacters.length + 1,
@@ -212,8 +225,13 @@ export default function Story({ characters }: StoryProps) {
           </DialogContent>
         </Dialog>
       )}
+
       <div className="mt-8">
-        <Button onClick={handleGenerateStory} disabled={isLoading}>
+        <Button
+          onClick={handleGenerateStory}
+          disabled={isLoading}
+          className="bg-blue-600 text-white hover:bg-blue-700"
+        >
           Generate Story
         </Button>
         {isLoading && <div className="mt-4">Loading...</div>}
