@@ -86,7 +86,7 @@ export default function Story({ characters }: StoryProps) {
     setMessages([]);
 
     // Llamada a append para generar la historia con personajes actualizados
-    append({ role: "user", content: JSON.stringify({ characters }) });
+    append({ role: "user", content: JSON.stringify({ characters }) }, '/app/api/chat');
   };
 
   const filterMessageContent = (content: string) => {
